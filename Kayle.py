@@ -13,6 +13,7 @@ import speech_recognition as sr
 
 class Application(tk.Frame):
     def __init__(self, master=None):
+        # First init and Window
         super().__init__(master, bg="#222", padx=50, pady=50)
         self.master.wm_minsize(900, 300)
         self.master = master
@@ -21,23 +22,24 @@ class Application(tk.Frame):
         self.master.configure(bg="#222")
         self.pack(fill="both", expand=True)
 
-        # Create a separate frame for the terminal
+        # Terminal Frame
         self.terminal_frame = tk.Frame(self, bg="#222", padx=10, pady=10)
         self.terminal_frame.pack(side="right", fill="both", expand=True)
 
-        # Create the terminal text widget inside the frame
+        # Terminal Text
         self.output_text = tk.Text(self.terminal_frame, bg="#222", fg="white", font=("Courier New", 10))
         self.output_text.pack(side="left", fill="both", expand=True)
-
-        # Add other GUI elements here
 
         self.create_widgets()
         self.round_corners()
 
     class HatespeechClassifier:
-        def __init__(self, model_path='D:/ClipMaker/best_regression_model.joblib'):
+        
+        # loading local model for hate speech identification
+        def __init__(self, model_path='best_regression_model.joblib'):
             self.model = joblib.load(model_path)
-
+            
+        # function to categorise output
         def classify(self, text):
             score = self.model.predict([text])[0]
             if score < -1:
@@ -53,6 +55,7 @@ class Application(tk.Frame):
             return score, label
 
     def gen_report(self, path, transcript, classification):
+        #creation of the PDF report
         name = os.path.splitext(path)[0] + '_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S' + '.pdf')
         canvas = Canvas(name, pagesize=(612.0, 792.0))
         text = canvas.beginText(50, 700)
@@ -60,11 +63,11 @@ class Application(tk.Frame):
         text.textLine("File Name: " + str(os.path.basename(path)))
         text.textLine("Date of Classification: " + str(datetime.datetime.now().strftime('%Y%m%d_%H%M%S')))
 
-        # split the transcript into multiple lines based on available space on the page
+        # stop the text from being cut off
         lines = transcript.split('\n')
         num_lines = len(lines)
         y_start = 600  # starting y position
-        line_height = 15  # height of each line
+        line_height = 15  
         for i, line in enumerate(lines):
             words = line.split()
             for word in words:
@@ -106,20 +109,21 @@ class Application(tk.Frame):
         foldername = os.path.splitext(os.path.basename(filepath))[0]
         os.makedirs(foldername, exist_ok=True)
 
-        # Step 2: Convert the file to a wav if necessary
+        # Convert the file to a wav
         if not filepath.endswith('.wav'):
             new_filepath = os.path.join(foldername, 'temp.wav')
             data, samplerate = sf.read(filepath)
             sf.write(new_filepath, data, samplerate, subtype='PCM_16')
             filepath = new_filepath
 
-        # Step 4: Call the transcribe_audio function on the audio file
+        # Call transcribe_audio on audio file
         r = sr.Recognizer()
         with sr.AudioFile(filepath) as source:
             audio = r.record(source)
-
+            
+        # save transcript locally
         transcript = r.recognize_google(audio)
-
+        #output transcription generate report
         print(transcript)
         hc = self.HatespeechClassifier()
         score, label = hc.classify(transcript)
@@ -128,7 +132,7 @@ class Application(tk.Frame):
         return transcript
 
     def create_widgets(self):
-
+        #ui creation
         self.logo_container = tk.Frame(self, bg="#222")
         self.logo_container.pack(side="top", pady=(20, 10))
         threading.Thread(target=self.redirect_output()).start()
@@ -177,7 +181,7 @@ class Application(tk.Frame):
 
     def on_drag_motion(self, event):
         pass
-
+    # function of main upload button
     def on_drag_release(self, event):
         file_path = filedialog.askopenfilename(filetypes=[("Audio files", "*.wav;*.mp3")])
         print(f"File path: {file_path}")
